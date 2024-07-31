@@ -1,0 +1,456 @@
+<html>
+<head>
+<title>credit_card_project.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #7a7e85;}
+.s1 { color: #bcbec4;}
+.s2 { color: #cf8e6d;}
+.s3 { color: #bcbec4;}
+.s4 { color: #6aab73;}
+.s5 { color: #2aacb8;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+credit_card_project.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+</span><span class="s1"># &lt;a name=&quot;0&quot;&gt;Hierarchical Clustering&lt;/a&gt; 
+</span><span class="s0">#%% md 
+</span><span class="s1">1. &lt;a href=&quot;#0&quot;&gt;Read the dataset&lt;/a&gt; 
+2. &lt;a href=&quot;#2&quot;&gt;Data investigation&lt;/a&gt; 
+3. &lt;a href=&quot;#3&quot;&gt;Data preprocessing &lt;/a&gt; 
+4. &lt;a href=&quot;#4&quot;&gt;Features transformation &lt;/a&gt; 
+5. &lt;a href=&quot;#5&quot;&gt;K means&lt;/a&gt; 
+6. &lt;a href=&quot;#5&quot;&gt;Training datasets&lt;/a&gt; 
+7. &lt;a href=&quot;#6&quot;&gt;Improvement ideas&lt;/a&gt; 
+ 
+ 
+</span><span class="s0">#%% 
+</span><span class="s2">import </span><span class="s1">pandas </span><span class="s2">as </span><span class="s1">pd</span>
+<span class="s2">import </span><span class="s1">numpy </span><span class="s2">as </span><span class="s1">np</span>
+<span class="s2">import </span><span class="s1">matplotlib</span><span class="s3">.</span><span class="s1">pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+<span class="s2">import </span><span class="s1">seaborn </span><span class="s2">as </span><span class="s1">sns</span>
+<span class="s2">import </span><span class="s1">plotly</span><span class="s3">.</span><span class="s1">express </span><span class="s2">as </span><span class="s1">px</span>
+<span class="s2">import </span><span class="s1">warnings</span>
+<span class="s1">warnings</span><span class="s3">.</span><span class="s1">filterwarnings</span><span class="s3">(</span><span class="s4">&quot;ignore&quot;</span><span class="s3">)</span>
+<span class="s0">#%% md 
+</span><span class="s1">## 1. &lt;a name=&quot;1&quot;&gt;Read the dataset&lt;/a&gt; 
+(&lt;a href=&quot;#0&quot;&gt;Go to top&lt;/a&gt;) 
+ 
+First dowmload the data set from this link https://www.kaggle.com/code/sadkoktaybicici/credit-card-data-clustering-k-mean/data 
+then import it in python. 
+</span><span class="s0">#%% 
+#read the data</span>
+
+<span class="s1">data_path </span><span class="s3">= </span><span class="s4">'data.csv'  </span><span class="s0">#the path where you downloaded the data</span>
+<span class="s1">df </span><span class="s3">= </span><span class="s1">pd</span><span class="s3">.</span><span class="s1">read_csv</span><span class="s3">(</span><span class="s1">data_path</span><span class="s3">)</span>
+
+<span class="s1">print</span><span class="s3">(</span><span class="s4">'The shape of the dataset is:'</span><span class="s3">, </span><span class="s1">df</span><span class="s3">.</span><span class="s1">shape</span><span class="s3">)</span>
+<span class="s0">#%% md 
+</span><span class="s1">## 2. &lt;a name=&quot;2&quot;&gt;Data investigation&lt;/a&gt; 
+(&lt;a href=&quot;#0&quot;&gt;Go to top&lt;/a&gt;) 
+ 
+in this part you need to check the data quality and assess any issues in the data as: 
+- null values in each column  
+- each column has the proper data type 
+- outliers 
+- duplicate rows 
+- distribution for each column (skewness) 
+&lt;br&gt; 
+ 
+**comment each issue you find**  
+</span><span class="s0">#%% 
+# Let's see the data types and non-null values for each column</span>
+<span class="s1">df</span><span class="s3">.</span><span class="s1">info</span><span class="s3">()     </span>
+<span class="s0">#%% md 
+</span><span class="s1">## All data types are fine! 
+</span><span class="s0">#%% 
+</span><span class="s1">df</span><span class="s3">.</span><span class="s1">drop</span><span class="s3">([</span><span class="s4">'CUST_ID'</span><span class="s3">], </span><span class="s1">axis</span><span class="s3">=</span><span class="s5">1</span><span class="s3">, </span><span class="s1">inplace</span><span class="s3">=</span><span class="s2">True</span><span class="s3">)   </span><span class="s0"># CUST_ID is categorical</span>
+<span class="s0">#%% md 
+</span><span class="s1">## All value ranges are fine except CASH_ADVANCE_FREQUENCY has values greater than 1. 
+</span><span class="s0">#%% 
+# This will print basic statistics for numerical columns</span>
+<span class="s1">df</span><span class="s3">.</span><span class="s1">describe</span><span class="s3">()</span>
+<span class="s0">#%% 
+</span><span class="s1">duplicates </span><span class="s3">= </span><span class="s1">df</span><span class="s3">.</span><span class="s1">duplicated</span><span class="s3">()   </span><span class="s0">#no duplicates</span>
+<span class="s1">df</span><span class="s3">[</span><span class="s1">duplicates</span><span class="s3">]</span>
+<span class="s0">#%% 
+</span><span class="s1">round</span><span class="s3">(</span><span class="s1">df</span><span class="s3">.</span><span class="s1">isnull</span><span class="s3">().</span><span class="s1">sum</span><span class="s3">(</span><span class="s1">axis</span><span class="s3">=</span><span class="s5">0</span><span class="s3">)*</span><span class="s5">100</span><span class="s3">/</span><span class="s1">df</span><span class="s3">.</span><span class="s1">shape</span><span class="s3">[</span><span class="s5">0</span><span class="s3">],</span><span class="s5">2</span><span class="s3">)    </span>
+<span class="s0">#%% 
+</span><span class="s1">df</span><span class="s3">.</span><span class="s1">isnull</span><span class="s3">().</span><span class="s1">sum</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">## 313 missing value in MINIMUM_PAYMENTS column and 1 missing value in CREDIT_LIMIT column 
+</span><span class="s0">#%% 
+</span><span class="s2">import </span><span class="s1">missingno </span><span class="s2">as </span><span class="s1">msno</span>
+<span class="s2">import </span><span class="s1">matplotlib</span><span class="s3">.</span><span class="s1">pyplot </span><span class="s2">as </span><span class="s1">plt</span>
+<span class="s0"># Visualize missingness</span>
+<span class="s1">msno</span><span class="s3">.</span><span class="s1">matrix</span><span class="s3">(</span><span class="s1">df</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1"># it seems like the missingness are distributed randomly 
+</span><span class="s0">#%% 
+</span><span class="s1">plt</span><span class="s3">.</span><span class="s1">style</span><span class="s3">.</span><span class="s1">use</span><span class="s3">(</span><span class="s4">'grayscale'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s5">6</span><span class="s3">, </span><span class="s5">6</span><span class="s3">))</span>
+<span class="s1">heatmap </span><span class="s3">= </span><span class="s1">sns</span><span class="s3">.</span><span class="s1">heatmap</span><span class="s3">(</span><span class="s1">df</span><span class="s3">.</span><span class="s1">corr</span><span class="s3">()[[</span><span class="s4">'MINIMUM_PAYMENTS'</span><span class="s3">]].</span><span class="s1">sort_values</span><span class="s3">(</span><span class="s1">by</span><span class="s3">=</span><span class="s4">'MINIMUM_PAYMENTS'</span><span class="s3">, </span><span class="s1">ascending</span><span class="s3">=</span><span class="s2">False</span><span class="s3">), </span><span class="s1">vmin</span><span class="s3">=-</span><span class="s5">1</span><span class="s3">, </span><span class="s1">vmax</span><span class="s3">=</span><span class="s5">1</span><span class="s3">, </span><span class="s1">annot</span><span class="s3">=</span><span class="s2">True</span><span class="s3">, </span><span class="s1">cmap</span><span class="s3">=</span><span class="s4">'RdYlGn'</span><span class="s3">)</span>
+<span class="s1">heatmap</span><span class="s3">.</span><span class="s1">set_title</span><span class="s3">(</span><span class="s4">'Features Correlating with MINIMUM_PAYMENTS'</span><span class="s3">, </span><span class="s1">fontdict</span><span class="s3">={</span><span class="s4">'fontsize'</span><span class="s3">:</span><span class="s5">18</span><span class="s3">}, </span><span class="s1">pad</span><span class="s3">=</span><span class="s5">16</span><span class="s3">)</span><span class="s1">;</span>
+<span class="s0">#%% md 
+</span><span class="s1">## there is no high correlation with other columns. 
+</span><span class="s0">#%% 
+</span><span class="s1">df</span><span class="s3">.</span><span class="s1">iloc</span><span class="s3">[:, </span><span class="s5">1</span><span class="s3">:].</span><span class="s1">skew</span><span class="s3">()    </span><span class="s0">#skewed data</span>
+<span class="s0">#%% md 
+</span><span class="s1">## 3. &lt;a name=&quot;3&quot;&gt;Data preprocessing&lt;/a&gt; 
+(&lt;a href=&quot;#0&quot;&gt;Go to top&lt;/a&gt;) 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">### Define below all the issues that you had found in the previous part 
+1- CUST_ID is categorical drop it.&lt;br&gt; 
+2- CASH_ADVANCE_FREQUENCY has values greater than 1.&lt;br&gt; 
+3- MINIMUM_PAYMENTS, CREDIT_LIMIT has null values  &lt;br&gt; 
+4- skewed data 
+</span><span class="s0">#%% 
+#make a copy for the original dataset</span>
+<span class="s1">df_copy</span><span class="s3">=</span><span class="s1">df</span><span class="s3">.</span><span class="s1">copy</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">**second issue** 
+</span><span class="s0">#%% 
+</span><span class="s1">df</span><span class="s3">.</span><span class="s1">loc</span><span class="s3">[</span><span class="s1">df</span><span class="s3">[</span><span class="s4">'CASH_ADVANCE_FREQUENCY'</span><span class="s3">] &gt; </span><span class="s5">1</span><span class="s3">, </span><span class="s4">'CASH_ADVANCE_FREQUENCY'</span><span class="s3">] = </span><span class="s5">1</span>
+<span class="s0">#%% 
+#test </span>
+<span class="s2">assert </span><span class="s1">df</span><span class="s3">[</span><span class="s4">'CASH_ADVANCE_FREQUENCY'</span><span class="s3">].</span><span class="s1">max</span><span class="s3">() == </span><span class="s5">1</span>
+<span class="s0">#%% md 
+</span><span class="s1">**third issue** 
+</span><span class="s0">#%% md 
+</span><span class="s1">## There are some methods to fill the missing values like : 
+## -Mean imputation is often used when the missing values are numerical and the distribution of the variable is approximately normal. 
+## -Median imputation is preferred when the distribution is skewed, as the median is less sensitive to outliers than the mean. 
+## -Mode imputation is suitable for categorical variables or numerical variables with a small number of unique values. 
+## so Mean imputation is suitable here as most columns are skewed. 
+</span><span class="s0">#%% 
+#solution: impute nulls with median</span>
+<span class="s1">median_minimum_payments </span><span class="s3">= </span><span class="s1">df</span><span class="s3">[</span><span class="s4">'MINIMUM_PAYMENTS'</span><span class="s3">].</span><span class="s1">median</span><span class="s3">()</span>
+<span class="s1">df</span><span class="s3">[</span><span class="s4">'MINIMUM_PAYMENTS'</span><span class="s3">].</span><span class="s1">fillna</span><span class="s3">(</span><span class="s1">median_minimum_payments</span><span class="s3">, </span><span class="s1">inplace</span><span class="s3">=</span><span class="s2">True</span><span class="s3">)</span>
+<span class="s0">#%% 
+</span><span class="s1">median_CREDIT_LIMIT </span><span class="s3">= </span><span class="s1">df</span><span class="s3">[</span><span class="s4">'CREDIT_LIMIT'</span><span class="s3">].</span><span class="s1">median</span><span class="s3">()</span>
+<span class="s1">df</span><span class="s3">[</span><span class="s4">'CREDIT_LIMIT'</span><span class="s3">].</span><span class="s1">fillna</span><span class="s3">(</span><span class="s1">median_CREDIT_LIMIT</span><span class="s3">, </span><span class="s1">inplace</span><span class="s3">=</span><span class="s2">True</span><span class="s3">)</span>
+<span class="s0">#%% 
+#test</span>
+<span class="s2">assert </span><span class="s1">df</span><span class="s3">[</span><span class="s4">'MINIMUM_PAYMENTS'</span><span class="s3">].</span><span class="s1">isnull</span><span class="s3">().</span><span class="s1">sum</span><span class="s3">() == </span><span class="s5">0</span>
+<span class="s2">assert </span><span class="s1">df</span><span class="s3">[</span><span class="s4">'CREDIT_LIMIT'</span><span class="s3">].</span><span class="s1">isnull</span><span class="s3">().</span><span class="s1">sum</span><span class="s3">() == </span><span class="s5">0</span>
+<span class="s0">#%% md 
+</span><span class="s1">## forth issue 
+</span><span class="s0">#%% 
+#solution: log_transformation to deal with skewed data</span>
+<span class="s1">sk_cols </span><span class="s3">= [</span><span class="s4">'BALANCE'</span><span class="s3">, </span><span class="s4">'PURCHASES'</span><span class="s3">, </span><span class="s4">'ONEOFF_PURCHASES'</span><span class="s3">, </span><span class="s4">'INSTALLMENTS_PURCHASES'</span><span class="s3">, </span><span class="s4">'CASH_ADVANCE'</span><span class="s3">, </span><span class="s4">'CASH_ADVANCE_TRX'</span><span class="s3">, </span><span class="s4">'PURCHASES_TRX'</span><span class="s3">,</span><span class="s4">'CREDIT_LIMIT'</span><span class="s3">, </span><span class="s4">'PAYMENTS'</span><span class="s3">, </span><span class="s4">'MINIMUM_PAYMENTS'</span><span class="s3">]</span>
+<span class="s0">#%% 
+</span><span class="s2">for </span><span class="s1">col </span><span class="s2">in </span><span class="s1">sk_cols</span><span class="s3">:</span>
+    <span class="s1">df</span><span class="s3">[</span><span class="s1">col</span><span class="s3">] = </span><span class="s1">np</span><span class="s3">.</span><span class="s1">log</span><span class="s3">(</span><span class="s5">1 </span><span class="s3">+ </span><span class="s1">df</span><span class="s3">[</span><span class="s1">col</span><span class="s3">])</span>
+<span class="s0">#%% md 
+</span><span class="s1">## 5. &lt;a name=&quot;5&quot;&gt;K Means&lt;/a&gt; 
+(&lt;a href=&quot;#5&quot;&gt;Go to top&lt;/a&gt;) 
+</span><span class="s0">#%% 
+</span><span class="s2">import </span><span class="s1">sklearn</span>
+<span class="s2">from </span><span class="s1">sklearn</span><span class="s3">.</span><span class="s1">decomposition </span><span class="s2">import </span><span class="s1">PCA</span>
+<span class="s2">from </span><span class="s1">sklearn</span><span class="s3">.</span><span class="s1">cluster </span><span class="s2">import </span><span class="s1">KMeans</span>
+<span class="s2">from </span><span class="s1">sklearn</span><span class="s3">.</span><span class="s1">metrics </span><span class="s2">import </span><span class="s1">silhouette_score</span>
+<span class="s2">from </span><span class="s1">sklearn</span><span class="s3">.</span><span class="s1">manifold </span><span class="s2">import </span><span class="s1">TSNE</span>
+<span class="s2">import </span><span class="s1">plotly</span><span class="s3">.</span><span class="s1">express </span><span class="s2">as </span><span class="s1">px</span>
+<span class="s2">from </span><span class="s1">sklearn</span><span class="s3">.</span><span class="s1">cluster </span><span class="s2">import </span><span class="s1">AgglomerativeClustering</span>
+<span class="s2">import </span><span class="s1">scipy</span><span class="s3">.</span><span class="s1">cluster</span><span class="s3">.</span><span class="s1">hierarchy </span><span class="s2">as </span><span class="s1">shc</span>
+<span class="s2">from </span><span class="s1">sklearn</span><span class="s3">.</span><span class="s1">cluster </span><span class="s2">import </span><span class="s1">AgglomerativeClustering</span>
+<span class="s0">#%% md 
+</span><span class="s1">## use elbow method  
+</span><span class="s0">#%% 
+</span><span class="s1">kmeans_models </span><span class="s3">= [</span><span class="s1">KMeans</span><span class="s3">(</span><span class="s1">n_clusters</span><span class="s3">=</span><span class="s1">k</span><span class="s3">, </span><span class="s1">random_state</span><span class="s3">=</span><span class="s5">23</span><span class="s3">).</span><span class="s1">fit</span><span class="s3">(</span><span class="s1">df</span><span class="s3">) </span><span class="s2">for </span><span class="s1">k </span><span class="s2">in </span><span class="s1">range </span><span class="s3">(</span><span class="s5">1</span><span class="s3">, </span><span class="s5">10</span><span class="s3">)]</span>
+<span class="s1">innertia </span><span class="s3">= [</span><span class="s1">model</span><span class="s3">.</span><span class="s1">inertia_ </span><span class="s2">for </span><span class="s1">model </span><span class="s2">in </span><span class="s1">kmeans_models</span><span class="s3">]</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">plot</span><span class="s3">(</span><span class="s1">range</span><span class="s3">(</span><span class="s5">1</span><span class="s3">, </span><span class="s5">10</span><span class="s3">), </span><span class="s1">innertia</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s4">'Elbow method'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s4">'Number of Clusters'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s4">'WCSS'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">## apply tsne to see the structure of the data 
+</span><span class="s0">#%% 
+</span><span class="s1">tsne </span><span class="s3">= </span><span class="s1">TSNE</span><span class="s3">(</span><span class="s1">n_components</span><span class="s3">=</span><span class="s5">2</span><span class="s3">, </span><span class="s1">random_state</span><span class="s3">=</span><span class="s5">42</span><span class="s3">)</span>
+<span class="s1">tsne_result </span><span class="s3">= </span><span class="s1">tsne</span><span class="s3">.</span><span class="s1">fit_transform</span><span class="s3">(</span><span class="s1">df</span><span class="s3">)</span>
+<span class="s0">#%% 
+</span><span class="s1">visualization_df </span><span class="s3">= </span><span class="s1">pd</span><span class="s3">.</span><span class="s1">DataFrame</span><span class="s3">(</span><span class="s1">tsne_result</span><span class="s3">, </span><span class="s1">columns</span><span class="s3">=[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">, </span><span class="s4">'t-SNE Component 2'</span><span class="s3">])</span>
+<span class="s1">sns</span><span class="s3">.</span><span class="s1">set_palette</span><span class="s3">(</span><span class="s4">&quot;viridis&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Plot the t-SNE visualization</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s5">10</span><span class="s3">, </span><span class="s5">6</span><span class="s3">))</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">scatter</span><span class="s3">(</span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">], </span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'t-SNE Component 2'</span><span class="s3">])</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s4">'t-SNE Visualization of Data Structure'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s4">'t-SNE Component 1'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s4">'t-SNE Component 2'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">## it seems like the data can be divided into 7 clusters 
+</span><span class="s0">#%% 
+</span><span class="s1">kmeans_models </span><span class="s3">= [</span><span class="s1">KMeans</span><span class="s3">(</span><span class="s1">n_clusters</span><span class="s3">=</span><span class="s1">k</span><span class="s3">, </span><span class="s1">random_state</span><span class="s3">=</span><span class="s5">23</span><span class="s3">).</span><span class="s1">fit</span><span class="s3">(</span><span class="s1">df</span><span class="s3">) </span><span class="s2">for </span><span class="s1">k </span><span class="s2">in </span><span class="s1">range </span><span class="s3">(</span><span class="s5">1</span><span class="s3">, </span><span class="s5">10</span><span class="s3">)]</span>
+<span class="s1">silhoutte_scores </span><span class="s3">= [</span><span class="s1">silhouette_score</span><span class="s3">(</span><span class="s1">df</span><span class="s3">, </span><span class="s1">model</span><span class="s3">.</span><span class="s1">labels_</span><span class="s3">) </span><span class="s2">for </span><span class="s1">model </span><span class="s2">in </span><span class="s1">kmeans_models</span><span class="s3">[</span><span class="s5">1</span><span class="s3">:</span><span class="s5">11</span><span class="s3">]]</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">plot</span><span class="s3">(</span><span class="s1">range</span><span class="s3">(</span><span class="s5">2</span><span class="s3">,</span><span class="s5">10</span><span class="s3">), </span><span class="s1">silhoutte_scores</span><span class="s3">, </span><span class="s4">&quot;bo-&quot;</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xticks</span><span class="s3">([</span><span class="s5">2</span><span class="s3">, </span><span class="s5">3</span><span class="s3">, </span><span class="s5">4 </span><span class="s3">, </span><span class="s5">5 </span><span class="s3">, </span><span class="s5">6 </span><span class="s3">, </span><span class="s5">7 </span><span class="s3">, </span><span class="s5">8 </span><span class="s3">, </span><span class="s5">9 </span><span class="s3">])</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s4">'Silhoutte scores vs Number of clusters'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s4">'Number of clusters'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s4">'Silhoutte score'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">## try with num of clusters=7 
+</span><span class="s0">#%% 
+</span><span class="s1">kmeans </span><span class="s3">= </span><span class="s1">KMeans</span><span class="s3">(</span><span class="s1">n_clusters </span><span class="s3">= </span><span class="s5">7</span><span class="s3">, </span><span class="s1">random_state</span><span class="s3">=</span><span class="s5">0</span><span class="s3">)</span>
+<span class="s1">labels </span><span class="s3">= </span><span class="s1">kmeans</span><span class="s3">.</span><span class="s1">fit_predict</span><span class="s3">(</span><span class="s1">df</span><span class="s3">)</span>
+<span class="s0">#%% md 
+</span><span class="s1">## use PCA to visualize the clusters 
+</span><span class="s0">#%% 
+</span><span class="s1">pca </span><span class="s3">= </span><span class="s1">PCA</span><span class="s3">(</span><span class="s1">n_components</span><span class="s3">=</span><span class="s5">2</span><span class="s3">)</span>
+<span class="s1">pca_result </span><span class="s3">= </span><span class="s1">pca</span><span class="s3">.</span><span class="s1">fit_transform</span><span class="s3">(</span><span class="s1">df</span><span class="s3">)</span>
+<span class="s0">#%% 
+</span><span class="s1">visualization_df </span><span class="s3">= </span><span class="s1">pd</span><span class="s3">.</span><span class="s1">DataFrame</span><span class="s3">(</span><span class="s1">pca_result</span><span class="s3">, </span><span class="s1">columns</span><span class="s3">=[</span><span class="s4">'PCA Component 1'</span><span class="s3">, </span><span class="s4">'PCA Component 2'</span><span class="s3">])</span>
+<span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] = </span><span class="s1">labels</span>
+<span class="s1">sns</span><span class="s3">.</span><span class="s1">set_palette</span><span class="s3">(</span><span class="s4">&quot;viridis&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Plot the PCA visualization with cluster labels</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s5">10</span><span class="s3">, </span><span class="s5">6</span><span class="s3">))</span>
+<span class="s2">for </span><span class="s1">cluster </span><span class="s2">in </span><span class="s1">range</span><span class="s3">(</span><span class="s5">7</span><span class="s3">):</span>
+    <span class="s1">cluster_points </span><span class="s3">= </span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] == </span><span class="s1">cluster</span><span class="s3">]</span>
+    <span class="s1">plt</span><span class="s3">.</span><span class="s1">scatter</span><span class="s3">(</span><span class="s1">cluster_points</span><span class="s3">[</span><span class="s4">'PCA Component 1'</span><span class="s3">], </span><span class="s1">cluster_points</span><span class="s3">[</span><span class="s4">'PCA Component 2'</span><span class="s3">], </span><span class="s1">label</span><span class="s3">=</span><span class="s4">f'Cluster </span><span class="s2">{</span><span class="s1">cluster</span><span class="s2">}</span><span class="s4">'</span><span class="s3">)</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s4">'PCA Visualization after K-Means Clustering'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s4">'PCA Component 1'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s4">'PCA Component 2'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">legend</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% 
+# Apply PCA to reduce dimensions to 3D</span>
+<span class="s1">pca </span><span class="s3">= </span><span class="s1">PCA</span><span class="s3">(</span><span class="s1">n_components</span><span class="s3">=</span><span class="s5">3</span><span class="s3">)</span>
+<span class="s1">pca_result </span><span class="s3">= </span><span class="s1">pca</span><span class="s3">.</span><span class="s1">fit_transform</span><span class="s3">(</span><span class="s1">df</span><span class="s3">)</span>
+<span class="s0">#%% 
+</span><span class="s1">visualization_df </span><span class="s3">= </span><span class="s1">pd</span><span class="s3">.</span><span class="s1">DataFrame</span><span class="s3">(</span><span class="s1">pca_result</span><span class="s3">, </span><span class="s1">columns</span><span class="s3">=[</span><span class="s4">'PCA Component 1'</span><span class="s3">, </span><span class="s4">'PCA Component 2'</span><span class="s3">, </span><span class="s4">'PCA Component 3'</span><span class="s3">])</span>
+<span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] = </span><span class="s1">labels</span>
+<span class="s1">sns</span><span class="s3">.</span><span class="s1">set_palette</span><span class="s3">(</span><span class="s4">&quot;viridis&quot;</span><span class="s3">)</span>
+<span class="s0"># Create an interactive 3D scatter plot </span>
+<span class="s1">fig </span><span class="s3">= </span><span class="s1">px</span><span class="s3">.</span><span class="s1">scatter_3d</span><span class="s3">(</span><span class="s1">visualization_df</span><span class="s3">, </span><span class="s1">x</span><span class="s3">=</span><span class="s4">'PCA Component 1'</span><span class="s3">, </span><span class="s1">y</span><span class="s3">=</span><span class="s4">'PCA Component 2'</span><span class="s3">, </span><span class="s1">z</span><span class="s3">=</span><span class="s4">'PCA Component 3'</span><span class="s3">, </span><span class="s1">color</span><span class="s3">=</span><span class="s4">'Cluster'</span><span class="s3">,</span><span class="s1">labels</span><span class="s3">={</span><span class="s4">'Cluster'</span><span class="s3">: </span><span class="s4">'Cluster'</span><span class="s3">},</span><span class="s1">template</span><span class="s3">=</span><span class="s4">'plotly_white'</span><span class="s3">) </span>
+
+<span class="s0"># Show the plot</span>
+<span class="s1">fig</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">## Perform k-means clustering on the PCA result 
+</span><span class="s0">#%% md 
+</span><span class="s1">## try to use 5 components 
+</span><span class="s0">#%% 
+</span><span class="s1">pca </span><span class="s3">= </span><span class="s1">PCA</span><span class="s3">(</span><span class="s1">n_components</span><span class="s3">=</span><span class="s5">5</span><span class="s3">)</span>
+<span class="s1">pca_result </span><span class="s3">= </span><span class="s1">pca</span><span class="s3">.</span><span class="s1">fit_transform</span><span class="s3">(</span><span class="s1">df</span><span class="s3">)</span>
+<span class="s0">#%% 
+</span><span class="s1">kmeans </span><span class="s3">= </span><span class="s1">KMeans</span><span class="s3">(</span><span class="s1">n_clusters</span><span class="s3">=</span><span class="s5">7</span><span class="s3">, </span><span class="s1">random_state</span><span class="s3">=</span><span class="s5">0</span><span class="s3">)</span>
+<span class="s1">labels_pca </span><span class="s3">= </span><span class="s1">kmeans</span><span class="s3">.</span><span class="s1">fit_predict</span><span class="s3">(</span><span class="s1">pca_result</span><span class="s3">)</span>
+<span class="s0">#%% 
+# Apply t-SNE to reduce dimensions to 2D on the PCA+k-means result</span>
+<span class="s1">tsne </span><span class="s3">= </span><span class="s1">TSNE</span><span class="s3">(</span><span class="s1">n_components</span><span class="s3">=</span><span class="s5">2</span><span class="s3">, </span><span class="s1">random_state</span><span class="s3">=</span><span class="s5">42</span><span class="s3">)</span>
+<span class="s1">tsne_result </span><span class="s3">= </span><span class="s1">tsne</span><span class="s3">.</span><span class="s1">fit_transform</span><span class="s3">(</span><span class="s1">pd</span><span class="s3">.</span><span class="s1">concat</span><span class="s3">([</span><span class="s1">df</span><span class="s3">, </span><span class="s1">pd</span><span class="s3">.</span><span class="s1">DataFrame</span><span class="s3">({</span><span class="s4">'Cluster'</span><span class="s3">: </span><span class="s1">labels_pca</span><span class="s3">})], </span><span class="s1">axis</span><span class="s3">=</span><span class="s5">1</span><span class="s3">))</span>
+
+<span class="s0"># Create a dataframe for visualization with cluster labels</span>
+<span class="s1">visualization_df </span><span class="s3">= </span><span class="s1">pd</span><span class="s3">.</span><span class="s1">DataFrame</span><span class="s3">(</span><span class="s1">tsne_result</span><span class="s3">, </span><span class="s1">columns</span><span class="s3">=[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">, </span><span class="s4">'t-SNE Component 2'</span><span class="s3">])</span>
+<span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] = </span><span class="s1">labels_pca</span>
+<span class="s1">sns</span><span class="s3">.</span><span class="s1">set_palette</span><span class="s3">(</span><span class="s4">&quot;viridis&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Plot the 2D scatter plot with cluster labels after PCA and k-means</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s5">10</span><span class="s3">, </span><span class="s5">6</span><span class="s3">))</span>
+<span class="s2">for </span><span class="s1">cluster </span><span class="s2">in </span><span class="s1">range</span><span class="s3">(</span><span class="s5">7</span><span class="s3">):</span>
+    <span class="s1">cluster_points </span><span class="s3">= </span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] == </span><span class="s1">cluster</span><span class="s3">]</span>
+    <span class="s1">plt</span><span class="s3">.</span><span class="s1">scatter</span><span class="s3">(</span><span class="s1">cluster_points</span><span class="s3">[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">], </span><span class="s1">cluster_points</span><span class="s3">[</span><span class="s4">'t-SNE Component 2'</span><span class="s3">], </span><span class="s1">label</span><span class="s3">=</span><span class="s4">f'Cluster </span><span class="s2">{</span><span class="s1">cluster</span><span class="s2">}</span><span class="s4">'</span><span class="s3">)</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s4">'2D Visualization with PCA, K-Means, and t-SNE'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s4">'t-SNE Component 1'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s4">'t-SNE Component 2'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">legend</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">## Hierarchial Clustering 
+</span><span class="s0">#%% 
+</span><span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s4">&quot;Counters Dendograms&quot;</span><span class="s3">)</span>
+<span class="s1">dend </span><span class="s3">= </span><span class="s1">shc</span><span class="s3">.</span><span class="s1">dendrogram</span><span class="s3">(</span><span class="s1">shc</span><span class="s3">.</span><span class="s1">linkage</span><span class="s3">(</span><span class="s1">y</span><span class="s3">=</span><span class="s1">df </span><span class="s3">,</span>
+                                  <span class="s1">method</span><span class="s3">=</span><span class="s4">'complete'</span><span class="s3">,</span>
+                                  <span class="s1">metric</span><span class="s3">=</span><span class="s4">'euclidean'</span><span class="s3">),</span>
+                        <span class="s1">orientation</span><span class="s3">=</span><span class="s4">'top'</span><span class="s3">)</span>
+<span class="s0">#%% 
+</span><span class="s1">n_clusters </span><span class="s3">= </span><span class="s5">7</span>
+
+<span class="s0"># Initialize the AgglomerativeClustering model</span>
+<span class="s1">hier_model </span><span class="s3">= </span><span class="s1">AgglomerativeClustering</span><span class="s3">(</span><span class="s1">n_clusters</span><span class="s3">=</span><span class="s1">n_clusters</span><span class="s3">)</span>
+<span class="s1">hier_model</span><span class="s3">.</span><span class="s1">fit</span><span class="s3">(</span><span class="s1">df</span><span class="s3">)</span>
+<span class="s0">#%% 
+# Apply t-SNE for dimensionality reduction</span>
+<span class="s1">tsne </span><span class="s3">= </span><span class="s1">TSNE</span><span class="s3">(</span><span class="s1">n_components</span><span class="s3">=</span><span class="s5">2</span><span class="s3">, </span><span class="s1">random_state</span><span class="s3">=</span><span class="s5">42</span><span class="s3">)</span>
+<span class="s1">tsne_result </span><span class="s3">= </span><span class="s1">tsne</span><span class="s3">.</span><span class="s1">fit_transform</span><span class="s3">(</span><span class="s1">df</span><span class="s3">)</span>
+<span class="s0">#%% 
+# Create a dataframe for visualization</span>
+<span class="s1">visualization_df </span><span class="s3">= </span><span class="s1">pd</span><span class="s3">.</span><span class="s1">DataFrame</span><span class="s3">(</span><span class="s1">tsne_result</span><span class="s3">, </span><span class="s1">columns</span><span class="s3">=[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">, </span><span class="s4">'t-SNE Component 2'</span><span class="s3">])</span>
+<span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] = </span><span class="s1">labels</span>
+<span class="s1">sns</span><span class="s3">.</span><span class="s1">set_palette</span><span class="s3">(</span><span class="s4">&quot;viridis&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Plot the 2D scatter plot with cluster labels after hierarchical clustering and t-SNE</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s5">10</span><span class="s3">, </span><span class="s5">6</span><span class="s3">))</span>
+<span class="s2">for </span><span class="s1">cluster </span><span class="s2">in </span><span class="s1">range</span><span class="s3">(</span><span class="s1">n_clusters</span><span class="s3">):</span>
+    <span class="s1">cluster_points </span><span class="s3">= </span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] == </span><span class="s1">cluster</span><span class="s3">]</span>
+    <span class="s1">plt</span><span class="s3">.</span><span class="s1">scatter</span><span class="s3">(</span><span class="s1">cluster_points</span><span class="s3">[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">], </span><span class="s1">cluster_points</span><span class="s3">[</span><span class="s4">'t-SNE Component 2'</span><span class="s3">], </span><span class="s1">label</span><span class="s3">=</span><span class="s4">f'Cluster </span><span class="s2">{</span><span class="s1">cluster</span><span class="s2">}</span><span class="s4">'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s4">'t-SNE Component 1'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s4">'t-SNE Component 2'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">legend</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">## DBSCAN 
+</span><span class="s0">#%% 
+</span><span class="s2">from </span><span class="s1">sklearn</span><span class="s3">.</span><span class="s1">cluster </span><span class="s2">import </span><span class="s1">DBSCAN</span>
+<span class="s1">DB_model </span><span class="s3">= </span><span class="s1">DBSCAN</span><span class="s3">(</span><span class="s1">eps</span><span class="s3">=</span><span class="s5">2.5</span><span class="s3">, </span><span class="s1">min_samples</span><span class="s3">=</span><span class="s5">5</span><span class="s3">).</span><span class="s1">fit</span><span class="s3">(</span><span class="s1">df</span><span class="s3">) </span>
+<span class="s0">#%% 
+</span><span class="s1">tsne </span><span class="s3">= </span><span class="s1">TSNE</span><span class="s3">(</span><span class="s1">n_components</span><span class="s3">=</span><span class="s5">2</span><span class="s3">, </span><span class="s1">random_state</span><span class="s3">=</span><span class="s5">42</span><span class="s3">)</span>
+<span class="s1">tsne_result </span><span class="s3">= </span><span class="s1">tsne</span><span class="s3">.</span><span class="s1">fit_transform</span><span class="s3">(</span><span class="s1">df</span><span class="s3">)</span>
+<span class="s0">#%% 
+# Create a dataframe for visualization</span>
+<span class="s1">visualization_df </span><span class="s3">= </span><span class="s1">pd</span><span class="s3">.</span><span class="s1">DataFrame</span><span class="s3">(</span><span class="s1">tsne_result</span><span class="s3">, </span><span class="s1">columns</span><span class="s3">=[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">, </span><span class="s4">'t-SNE Component 2'</span><span class="s3">])</span>
+<span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] = </span><span class="s1">DB_model</span><span class="s3">.</span><span class="s1">labels_</span>
+<span class="s1">sns</span><span class="s3">.</span><span class="s1">set_palette</span><span class="s3">(</span><span class="s4">&quot;viridis&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Plot the 2D scatter plot</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s5">10</span><span class="s3">, </span><span class="s5">6</span><span class="s3">))</span>
+<span class="s1">unique_clusters </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">unique</span><span class="s3">(</span><span class="s1">DB_model</span><span class="s3">.</span><span class="s1">labels_</span><span class="s3">)</span>
+<span class="s2">for </span><span class="s1">cluster </span><span class="s2">in </span><span class="s1">unique_clusters</span><span class="s3">:</span>
+    <span class="s2">if </span><span class="s1">cluster </span><span class="s3">== -</span><span class="s5">1</span><span class="s3">:</span>
+        <span class="s0"># Noise points (outliers) are plotted separately</span>
+        <span class="s1">noise_points </span><span class="s3">= </span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] == </span><span class="s1">cluster</span><span class="s3">]</span>
+        <span class="s1">plt</span><span class="s3">.</span><span class="s1">scatter</span><span class="s3">(</span><span class="s1">noise_points</span><span class="s3">[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">], </span><span class="s1">noise_points</span><span class="s3">[</span><span class="s4">'t-SNE Component 2'</span><span class="s3">], </span><span class="s1">label</span><span class="s3">=</span><span class="s4">f'Noise'</span><span class="s3">, </span><span class="s1">alpha</span><span class="s3">=</span><span class="s5">0.5</span><span class="s3">)</span>
+    <span class="s2">else</span><span class="s3">:</span>
+        <span class="s1">cluster_points </span><span class="s3">= </span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] == </span><span class="s1">cluster</span><span class="s3">]</span>
+        <span class="s1">plt</span><span class="s3">.</span><span class="s1">scatter</span><span class="s3">(</span><span class="s1">cluster_points</span><span class="s3">[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">], </span><span class="s1">cluster_points</span><span class="s3">[</span><span class="s4">'t-SNE Component 2'</span><span class="s3">], </span><span class="s1">label</span><span class="s3">=</span><span class="s4">f'Cluster </span><span class="s2">{</span><span class="s1">cluster</span><span class="s2">}</span><span class="s4">'</span><span class="s3">)</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s4">'DBSCAN Clustering Results with t-SNE'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s4">'t-SNE Component 1'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s4">'t-SNE Component 2'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">legend</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">## GMM 
+</span><span class="s0">#%% 
+</span><span class="s1">pca </span><span class="s3">= </span><span class="s1">PCA</span><span class="s3">(</span><span class="s1">n_components</span><span class="s3">=</span><span class="s5">7</span><span class="s3">)</span>
+<span class="s1">pca_result </span><span class="s3">= </span><span class="s1">pca</span><span class="s3">.</span><span class="s1">fit_transform</span><span class="s3">(</span><span class="s1">df</span><span class="s3">)</span>
+<span class="s0">#%% 
+</span><span class="s2">from </span><span class="s1">sklearn</span><span class="s3">.</span><span class="s1">mixture </span><span class="s2">import </span><span class="s1">GaussianMixture</span>
+<span class="s0"># Fit GMM model</span>
+<span class="s1">gmm_model </span><span class="s3">= </span><span class="s1">GaussianMixture</span><span class="s3">(</span><span class="s1">n_components</span><span class="s3">=</span><span class="s5">7</span><span class="s3">)</span>
+<span class="s1">gmm_model</span><span class="s3">.</span><span class="s1">fit</span><span class="s3">(</span><span class="s1">pca_result</span><span class="s3">)</span>
+<span class="s1">labels </span><span class="s3">= </span><span class="s1">gmm_model</span><span class="s3">.</span><span class="s1">predict</span><span class="s3">(</span><span class="s1">pca_result</span><span class="s3">)</span>
+<span class="s0">#%% 
+# Apply t-SNE for dimensionality reduction</span>
+<span class="s1">tsne </span><span class="s3">= </span><span class="s1">TSNE</span><span class="s3">(</span><span class="s1">n_components</span><span class="s3">=</span><span class="s5">2</span><span class="s3">, </span><span class="s1">random_state</span><span class="s3">=</span><span class="s5">42</span><span class="s3">)</span>
+<span class="s1">tsne_result </span><span class="s3">= </span><span class="s1">tsne</span><span class="s3">.</span><span class="s1">fit_transform</span><span class="s3">(</span><span class="s1">pca_result</span><span class="s3">)</span>
+<span class="s0">#%% 
+# Create a dataframe for visualization</span>
+<span class="s1">visualization_df </span><span class="s3">= </span><span class="s1">pd</span><span class="s3">.</span><span class="s1">DataFrame</span><span class="s3">(</span><span class="s1">tsne_result</span><span class="s3">, </span><span class="s1">columns</span><span class="s3">=[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">, </span><span class="s4">'t-SNE Component 2'</span><span class="s3">])</span>
+<span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] = </span><span class="s1">labels</span>
+<span class="s1">sns</span><span class="s3">.</span><span class="s1">set_palette</span><span class="s3">(</span><span class="s4">&quot;viridis&quot;</span><span class="s3">)</span>
+
+<span class="s0"># Plot the 2D scatter plot </span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">figure</span><span class="s3">(</span><span class="s1">figsize</span><span class="s3">=(</span><span class="s5">10</span><span class="s3">, </span><span class="s5">6</span><span class="s3">))</span>
+<span class="s1">unique_clusters </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">unique</span><span class="s3">(</span><span class="s1">labels</span><span class="s3">)</span>
+<span class="s2">for </span><span class="s1">cluster </span><span class="s2">in </span><span class="s1">unique_clusters</span><span class="s3">:</span>
+    <span class="s1">cluster_points </span><span class="s3">= </span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s1">visualization_df</span><span class="s3">[</span><span class="s4">'Cluster'</span><span class="s3">] == </span><span class="s1">cluster</span><span class="s3">]</span>
+    <span class="s1">plt</span><span class="s3">.</span><span class="s1">scatter</span><span class="s3">(</span><span class="s1">cluster_points</span><span class="s3">[</span><span class="s4">'t-SNE Component 1'</span><span class="s3">], </span><span class="s1">cluster_points</span><span class="s3">[</span><span class="s4">'t-SNE Component 2'</span><span class="s3">], </span><span class="s1">label</span><span class="s3">=</span><span class="s4">f'Cluster </span><span class="s2">{</span><span class="s1">cluster</span><span class="s2">}</span><span class="s4">'</span><span class="s3">)</span>
+
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">title</span><span class="s3">(</span><span class="s4">'GMM Clustering Results with t-SNE'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">xlabel</span><span class="s3">(</span><span class="s4">'t-SNE Component 1'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">ylabel</span><span class="s3">(</span><span class="s4">'t-SNE Component 2'</span><span class="s3">)</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">legend</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% 
+</span><span class="s1">silhoutte_scores </span><span class="s3">= </span><span class="s1">silhouette_score</span><span class="s3">(</span><span class="s1">pca_result</span><span class="s3">, </span><span class="s1">labels</span><span class="s3">) </span>
+<span class="s1">print</span><span class="s3">(</span><span class="s4">&quot;silhoutte_scores = &quot; </span><span class="s3">, </span><span class="s1">silhoutte_scores</span><span class="s3">)</span>
+<span class="s0">#%% md 
+</span><span class="s1">## it seems like kmeans gives the best results. 
+</span><span class="s0">#%% md 
+</span><span class="s1">## let's interpret the clusters 
+</span><span class="s0">#%% 
+</span><span class="s1">df_copy</span><span class="s3">[</span><span class="s4">'cluster'</span><span class="s3">] = </span><span class="s1">labels_pca</span>
+<span class="s0">#%% 
+# Define the columns and clusters</span>
+<span class="s1">cols </span><span class="s3">= [</span><span class="s4">'PURCHASES'</span><span class="s3">, </span><span class="s4">'ONEOFF_PURCHASES' </span><span class="s3">,</span><span class="s4">'PURCHASES_FREQUENCY'</span><span class="s3">,</span><span class="s4">'PAYMENTS'</span><span class="s3">, </span><span class="s4">'CASH_ADVANCE'</span><span class="s3">,</span><span class="s4">'CREDIT_LIMIT' </span><span class="s3">,</span><span class="s4">'INSTALLMENTS_PURCHASES'</span><span class="s3">, </span><span class="s4">'PURCHASES_TRX'</span><span class="s3">,</span>
+        <span class="s4">'CASH_ADVANCE_TRX'</span><span class="s3">, </span><span class="s4">'CASH_ADVANCE_FREQUENCY'</span><span class="s3">, </span><span class="s4">'ONEOFF_PURCHASES_FREQUENCY'</span><span class="s3">,</span>
+        <span class="s4">'PURCHASES_INSTALLMENTS_FREQUENCY'</span><span class="s3">, </span><span class="s4">'CASH_ADVANCE_FREQUENCY'</span><span class="s3">, </span><span class="s4">'TENURE'</span><span class="s3">]</span>
+<span class="s1">clusters </span><span class="s3">= </span><span class="s1">df_copy</span><span class="s3">[</span><span class="s4">'cluster'</span><span class="s3">].</span><span class="s1">unique</span><span class="s3">()</span>
+
+<span class="s0"># Set up subplots</span>
+<span class="s1">num_rows </span><span class="s3">= </span><span class="s1">len</span><span class="s3">(</span><span class="s1">cols</span><span class="s3">)</span>
+<span class="s1">num_cols </span><span class="s3">= </span><span class="s1">len</span><span class="s3">(</span><span class="s1">clusters</span><span class="s3">)</span>
+<span class="s1">fig</span><span class="s3">, </span><span class="s1">axes </span><span class="s3">= </span><span class="s1">plt</span><span class="s3">.</span><span class="s1">subplots</span><span class="s3">(</span><span class="s1">num_rows</span><span class="s3">, </span><span class="s1">num_cols</span><span class="s3">, </span><span class="s1">figsize</span><span class="s3">=(</span><span class="s5">16</span><span class="s3">, </span><span class="s5">4</span><span class="s3">*</span><span class="s1">num_rows</span><span class="s3">))</span>
+
+<span class="s0"># Loop through each feature</span>
+<span class="s2">for </span><span class="s1">i</span><span class="s3">, </span><span class="s1">col </span><span class="s2">in </span><span class="s1">enumerate</span><span class="s3">(</span><span class="s1">cols</span><span class="s3">):</span>
+    <span class="s0"># Loop through each cluster</span>
+    <span class="s2">for </span><span class="s1">j</span><span class="s3">, </span><span class="s1">cluster </span><span class="s2">in </span><span class="s1">enumerate</span><span class="s3">(</span><span class="s1">clusters</span><span class="s3">):</span>
+        <span class="s0"># Select data points belonging to the current cluster</span>
+        <span class="s1">data </span><span class="s3">= </span><span class="s1">df_copy</span><span class="s3">[</span><span class="s1">df_copy</span><span class="s3">[</span><span class="s4">'cluster'</span><span class="s3">] == </span><span class="s1">cluster</span><span class="s3">][</span><span class="s1">col</span><span class="s3">]</span>
+        <span class="s0"># Plot histogram for the current cluster in the current subplot</span>
+        <span class="s1">sns</span><span class="s3">.</span><span class="s1">histplot</span><span class="s3">(</span><span class="s1">data</span><span class="s3">, </span><span class="s1">bins</span><span class="s3">=</span><span class="s5">5</span><span class="s3">, </span><span class="s1">ax</span><span class="s3">=</span><span class="s1">axes</span><span class="s3">[</span><span class="s1">i</span><span class="s3">, </span><span class="s1">j</span><span class="s3">], </span><span class="s1">stat</span><span class="s3">=</span><span class="s4">'percent'</span><span class="s3">)</span>
+        <span class="s1">axes</span><span class="s3">[</span><span class="s1">i</span><span class="s3">, </span><span class="s1">j</span><span class="s3">].</span><span class="s1">set_title</span><span class="s3">(</span><span class="s4">f'Cluster </span><span class="s2">{</span><span class="s1">cluster</span><span class="s2">}</span><span class="s4">'</span><span class="s3">)</span>
+        <span class="s1">axes</span><span class="s3">[</span><span class="s1">i</span><span class="s3">, </span><span class="s1">j</span><span class="s3">].</span><span class="s1">set_xlabel</span><span class="s3">(</span><span class="s1">col</span><span class="s3">)</span>
+        <span class="s1">axes</span><span class="s3">[</span><span class="s1">i</span><span class="s3">, </span><span class="s1">j</span><span class="s3">].</span><span class="s1">set_ylabel</span><span class="s3">(</span><span class="s4">'Percent'</span><span class="s3">)</span>
+        
+        <span class="s0"># Calculate mean</span>
+        <span class="s1">mean_value </span><span class="s3">= </span><span class="s1">np</span><span class="s3">.</span><span class="s1">mean</span><span class="s3">(</span><span class="s1">data</span><span class="s3">)</span>
+        <span class="s0"># Annotate with mean value</span>
+        <span class="s1">axes</span><span class="s3">[</span><span class="s1">i</span><span class="s3">, </span><span class="s1">j</span><span class="s3">].</span><span class="s1">axvline</span><span class="s3">(</span><span class="s1">mean_value</span><span class="s3">, </span><span class="s1">color</span><span class="s3">=</span><span class="s4">'r'</span><span class="s3">, </span><span class="s1">linestyle</span><span class="s3">=</span><span class="s4">'--'</span><span class="s3">, </span><span class="s1">linewidth</span><span class="s3">=</span><span class="s5">1</span><span class="s3">)</span>
+        <span class="s1">axes</span><span class="s3">[</span><span class="s1">i</span><span class="s3">, </span><span class="s1">j</span><span class="s3">].</span><span class="s1">text</span><span class="s3">(</span><span class="s1">mean_value</span><span class="s3">, </span><span class="s1">axes</span><span class="s3">[</span><span class="s1">i</span><span class="s3">, </span><span class="s1">j</span><span class="s3">].</span><span class="s1">get_ylim</span><span class="s3">()[</span><span class="s5">1</span><span class="s3">]*</span><span class="s5">0.9</span><span class="s3">, </span><span class="s4">f'Mean: </span><span class="s2">{</span><span class="s1">mean_value</span><span class="s2">:</span><span class="s4">.2f</span><span class="s2">}</span><span class="s4">'</span><span class="s3">, </span><span class="s1">color</span><span class="s3">=</span><span class="s4">'r'</span><span class="s3">)</span>
+
+<span class="s0"># Adjust layout</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">tight_layout</span><span class="s3">()</span>
+<span class="s1">plt</span><span class="s3">.</span><span class="s1">show</span><span class="s3">()</span>
+<span class="s0">#%% 
+</span><span class="s1">df_copy</span><span class="s3">.</span><span class="s1">groupby</span><span class="s3">(</span><span class="s4">'cluster'</span><span class="s3">)[</span><span class="s1">cols</span><span class="s3">].</span><span class="s1">mean</span><span class="s3">()</span>
+<span class="s0">#%% md 
+</span><span class="s1">## Cluster 0: &quot;Occasional Spenders&quot; 
+ 
+These customers make infrequent purchases with a moderate credit limit. 
+They show a balanced usage of cash advances and purchases in installments. 
+Targeting them with occasional promotions or discounts might encourage more frequent spending. 
+ 
+## Cluster 1: &quot;Frequent Shoppers with Constraints&quot; 
+ 
+This group comprises customers who make frequent purchases but have lower credit limits. 
+They tend to avoid cash advances and prefer purchasing in installments. 
+Tailor marketing efforts towards credit limit increases, loyalty programs, and installment-friendly promotions. 
+ 
+## Cluster 2: &quot;Inactive Low-Spenders&quot; 
+ 
+Customers in this cluster exhibit very low purchasing activity and credit limit usage. 
+They might need personalized incentives or campaigns to reactivate their card usage. 
+Consider offering exclusive promotions to encourage the first few purchases. 
+ 
+## Cluster 3: &quot;High-Value, Reliable Customers&quot; 
+ 
+This cluster represents high-value customers who make substantial and frequent purchases. 
+They have high credit limits and consistently make payments. 
+Target loyalty programs, exclusive offers, and premium services to retain and nurture this customer segment. 
+ 
+## Cluster 4: &quot;Balanced Spenders with Cash Advances&quot; 
+ 
+Customers in this group exhibit a balance between high purchases and cash advance usage. 
+Target them with promotions that combine cash advance benefits with discounts on purchases. 
+ 
+## Cluster 5: &quot;Cash Advance Users&quot; 
+ 
+This cluster consists of customers with low purchase activity but a higher preference for cash advances. 
+Consider marketing campaigns that emphasize the convenience and benefits of cash advances. 
+ 
+## Cluster 6: &quot;Moderate and Diverse Spenders&quot; 
+ 
+Customers in this group make moderate purchases across different categories. 
+They use cash advances moderately and prefer purchases in installments. 
+Tailor marketing messages to highlight the versatility of their credit card for various spending needs. 
+</span><span class="s0">#%% 
+</span></pre>
+</body>
+</html>
